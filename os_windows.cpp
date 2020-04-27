@@ -2,10 +2,12 @@
 #include <cstdint>
 #include <iostream>
 
+using std::cout;
+
 namespace OS {
   void DelayUS(uint32_t US)
   {
-    std::cout << "DelayUS is not implemented on Windows\n";
+    cout << "DelayUS is not implemented on Windows\n";
     US = US;
   }
 

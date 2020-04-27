@@ -35,7 +35,7 @@ namespace OS {
     sleep(Seconds);
   }
 
-  extern uint32_t GetFreeRunningUS(void)
+  extern uint32_t GetFreeRunningUS()
   {
     struct timeval tv;
     gettimeofday(&tv, NULL);

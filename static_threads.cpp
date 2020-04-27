@@ -2,6 +2,8 @@
 #include "os.hpp"
 #include <iostream>
 
+using std::cout;
+
 int main()
 {
   Proto::Thread HeartbeatThread;
@@ -10,9 +12,9 @@ int main()
     [](Proto::Thread& rThread) {
       ThreadBegin();
         for (;;) {
-          std::cout << "HeartbeatThread: Heartbeat On\n";
+          cout << "HeartbeatThread: Heartbeat On\n";
           ThreadDelayMS(50);
-          std::cout << "HeartbeatThread: Heartbeat Off\n";
+          cout << "HeartbeatThread: Heartbeat Off\n";
           ThreadDelaySeconds(2);
         }
       ThreadEnd();

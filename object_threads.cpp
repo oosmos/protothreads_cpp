@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstdint>
 
+using std::cout;
+
 struct MyObject : public Proto::Object
 {
   Proto::Thread BlinkingThread_Instance;
@@ -14,9 +16,9 @@ struct MyObject : public Proto::Object
     [](Proto::Thread& rThread) {
       ThreadBegin();
         for (;;) {
-          std::cout << "BlinkingThread: LED On\n";
+          cout << "BlinkingThread: LED On\n";
           ThreadDelayMS(250);
-          std::cout << "BlinkingThread: LED Off\n";
+          cout << "BlinkingThread: LED Off\n";
           ThreadDelayMS(750);
         }
       ThreadEnd();
@@ -26,7 +28,7 @@ struct MyObject : public Proto::Object
       ThreadBegin();
         for (;;) {
           m_BeepCount += 1;
-          std::cout << "BeepingThread: Beep " << m_BeepCount << '\n';
+          cout << "BeepingThread: Beep " << m_BeepCount << '\n';
           ThreadDelaySeconds(2);
         }
       ThreadEnd();
