@@ -37,6 +37,8 @@ This is an example of a thread at file scope.
 #include "os.hpp"
 #include <iostream>
 
+using std::cout;
+
 int main()
 {
   Proto::Thread HeartbeatThread;
@@ -45,9 +47,9 @@ int main()
     [](Proto::Thread& rThread) {
       ThreadBegin();
         for (;;) {
-          std::cout << "HeartbeatThread: Heartbeat On\n";
+          cout << "HeartbeatThread: Heartbeat On\n";
           ThreadDelayMS(50);
-          std::cout << "HeartbeatThread: Heartbeat Off\n";
+          cout << "HeartbeatThread: Heartbeat Off\n";
           ThreadDelaySeconds(2);
         }
       ThreadEnd();
@@ -78,6 +80,8 @@ Here is an example of two object threads, where the thread functions are inside 
 #include <iostream>
 #include <cstdint>
 
+using std::cout;
+
 struct MyObject : public Proto::Object
 {
   Proto::Thread BlinkingThread_Instance;
@@ -89,9 +93,9 @@ struct MyObject : public Proto::Object
     [](Proto::Thread& rThread) {
       ThreadBegin();
         for (;;) {
-          std::cout << "BlinkingThread: LED On\n";
+          cout << "BlinkingThread: LED On\n";
           ThreadDelayMS(250);
-          std::cout << "BlinkingThread: LED Off\n";
+          cout << "BlinkingThread: LED Off\n";
           ThreadDelayMS(750);
         }
       ThreadEnd();
@@ -101,7 +105,7 @@ struct MyObject : public Proto::Object
       ThreadBegin();
         for (;;) {
           m_BeepCount += 1;
-          std::cout << "BeepingThread: Beep " << m_BeepCount << '\n';
+          cout << "BeepingThread: Beep " << m_BeepCount << '\n';
           ThreadDelaySeconds(2);
         }
       ThreadEnd();
@@ -151,10 +155,12 @@ This example tests all the Proto Thread functions.
 #include <iostream>
 #include <cstdint>
 
+using std::cout;
+
 static void AssertWarn(bool MustBeTrue, const char * pMessage)
 {
   if (!MustBeTrue) {
-    std::cout << pMessage << '\n';
+    cout << pMessage << '\n';
   }
 }
 
@@ -175,38 +181,38 @@ struct MyObject : public Proto::Worker<int>
   {
     ThreadBegin();
       for (rData.i = 1; rData.i <= 5; rData.i++) {
-        std::cout << "TestThread: Iteration " << rData.i << '\n';
+        cout << "TestThread: Iteration " << rData.i << '\n';
         ThreadDelayUS(300);
       }
 
       ThreadWaitCond(!QueueIsEmpty());
       rData.Value = Pop();
-      std::cout << "Popped value: " << rData.Value << '\n';
+      cout << "Popped value: " << rData.Value << '\n';
 
-      std::cout << "TestThread: DelaySeconds\n";
+      cout << "TestThread: DelaySeconds\n";
       ThreadDelaySeconds(1);
 
-      std::cout << "TestThread: Yield\n";
+      cout << "TestThread: Yield\n";
       ThreadYield();
 
       m_ObjectMember += 1;
 
-      std::cout << "TestThread: WaitCond\n";
+      cout << "TestThread: WaitCond\n";
       ThreadWaitCond(true);
 
-      std::cout << "TestThread: WaitCond_Timeout 1\n";
+      cout << "TestThread: WaitCond_Timeout 1\n";
       ThreadWaitCond_TimeoutMS(true, 100, &rData.TimedOut);
       AssertWarn(!rData.TimedOut, "Should not have timed out.");
 
-      std::cout << "TestThread: WaitCond_Timeout 2\n";
+      cout << "TestThread: WaitCond_Timeout 2\n";
       ThreadWaitCond_TimeoutMS(false, 100, &rData.TimedOut);
       AssertWarn(rData.TimedOut, "Should have timed out.");
 
-      std::cout << "TestThread: Exit (to ThreadFinally)\n";
+      cout << "TestThread: Exit (to ThreadFinally)\n";
       ThreadExit();
-      std::cout << "TestThread: Should not get here\n";
+      cout << "TestThread: Should not get here\n";
     ThreadFinally();
-      std::cout << "TestThread: Exiting\n";
+      cout << "TestThread: Exiting\n";
     ThreadEnd();
   }
 
@@ -217,7 +223,7 @@ struct MyObject : public Proto::Worker<int>
     ThreadBegin();
       Push(6);
       ThreadWaitCond(TestThread_Instance.Join());
-      std::cout << "COMPLETE.  Exiting.\n";
+      cout << "COMPLETE.  Exiting.\n";
       OS::Exit(1);
     ThreadEnd();
   }
