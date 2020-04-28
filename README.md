@@ -168,70 +168,64 @@ struct MyObject : public Proto::Worker<int>
 {
   uint32_t m_ObjectMember = 0;
 
-  Proto::Thread TestThread_Instance;
-
-  struct sTestThread_Data
-  {
+  struct sTestThread_Data {
     int   i;
     bool  TimedOut;
     int   Value;
   } TestThread_Data;
 
-  void TestThread(Proto::Thread& rThread, sTestThread_Data& rData)
-  {
-    ThreadBegin();
-      for (rData.i = 1; rData.i <= 5; rData.i++) {
-        cout << "TestThread: Iteration " << rData.i << '\n';
-        ThreadDelayUS(300);
-      }
+  Proto::Thread  TestThread_Instance;
 
-      ThreadWaitCond(!QueueIsEmpty());
-      rData.Value = Pop();
-      cout << "Popped value: " << rData.Value << '\n';
-
-      cout << "TestThread: DelaySeconds\n";
-      ThreadDelaySeconds(1);
-
-      cout << "TestThread: Yield\n";
-      ThreadYield();
-
-      m_ObjectMember += 1;
-
-      cout << "TestThread: WaitCond\n";
-      ThreadWaitCond(true);
-
-      cout << "TestThread: WaitCond_Timeout 1\n";
-      ThreadWaitCond_TimeoutMS(true, 100, &rData.TimedOut);
-      AssertWarn(!rData.TimedOut, "Should not have timed out.");
-
-      cout << "TestThread: WaitCond_Timeout 2\n";
-      ThreadWaitCond_TimeoutMS(false, 100, &rData.TimedOut);
-      AssertWarn(rData.TimedOut, "Should have timed out.");
-
-      cout << "TestThread: Exit (to ThreadFinally)\n";
-      ThreadExit();
-      cout << "TestThread: Should not get here\n";
-    ThreadFinally();
-      cout << "TestThread: Exiting\n";
-    ThreadEnd();
-  }
-
-  Proto::Thread ControllerThread_Instance;
-
-  void ControllerThread(Proto::Thread& rThread)
-  {
-    ThreadBegin();
-      Push(6);
-      ThreadWaitCond(TestThread_Instance.Join());
-      cout << "COMPLETE.  Exiting.\n";
-      OS::Exit(1);
-    ThreadEnd();
-  }
+  Proto::Thread  ControllerThread_Instance;
 
   void Run()
   {
-    ControllerThread(ControllerThread_Instance);
-    TestThread(TestThread_Instance, TestThread_Data);
+    [&](Proto::Thread& rThread, sTestThread_Data& rData) {
+      ThreadBegin();
+        for (rData.i = 1; rData.i <= 5; rData.i++) {
+          cout << "TestThread: Iteration " << rData.i << '\n';
+          ThreadDelayUS(300);
+        }
+
+        ThreadWaitCond(!QueueIsEmpty());
+        rData.Value = Pop();
+        cout << "Popped value: " << rData.Value << '\n';
+
+        cout << "TestThread: DelaySeconds\n";
+        ThreadDelaySeconds(1);
+
+        cout << "TestThread: Yield\n";
+        ThreadYield();
+
+        m_ObjectMember += 1;
+
+        cout << "TestThread: WaitCond\n";
+        ThreadWaitCond(true);
+
+        cout << "TestThread: WaitCond_Timeout 1\n";
+        ThreadWaitCond_TimeoutMS(true, 100, &rData.TimedOut);
+        AssertWarn(!rData.TimedOut, "Should not have timed out.");
+
+        cout << "TestThread: WaitCond_Timeout 2\n";
+        ThreadWaitCond_TimeoutMS(false, 100, &rData.TimedOut);
+        AssertWarn(rData.TimedOut, "Should have timed out.");
+
+        cout << "TestThread: Exit (to ThreadFinally)\n";
+        ThreadExit();
+        cout << "TestThread: Should not get here\n";
+      ThreadFinally();
+        cout << "TestThread: Exiting\n";
+      ThreadEnd();
+    }(TestThread_Instance, TestThread_Data);
+
+    [&](Proto::Thread& rThread) {
+      ThreadBegin();
+        Push(6);
+        ThreadWaitCond(TestThread_Instance.Join());
+        cout << "COMPLETE.  Exiting.\n";
+        OS::Exit(1);
+      ThreadEnd();
+    }(ControllerThread_Instance);
   }
 };
 
@@ -270,7 +264,7 @@ The program does not terminate.  You must press `CNTL-C` to exit.
 
 ### Stack Variables
 
-One of the severe limitations of the original C implementation of ProtoThreads is that any values stored in variables on the runtime stack are not preserved from one invocation of the thread function to the next. This implementation addresses this limitation by optionally passing the thread a data structure where the programmer can preserve values from one invocation to the next in a clean, reliable, and readable way.  Call it a ProtoStack.  In the example above, see how the `TestThread` function uses the members of the `TestThreadStack` class.
+One of the severe limitations of the original C implementation of ProtoThreads is that any values stored in variables on the runtime stack are not preserved from one invocation of the thread function to the next. This implementation addresses this limitation by optionally passing an instance of a data structure to the thread where you can preserve values from one invocation to the next in a clean, reliable, and readable way.  In the example above, see how the `TestThread` function uses the members of the `TestThread_Data` structure.
 
 ## How ProtoThreads Work
 
@@ -282,8 +276,6 @@ For a detailed walk-through of how ProtoThreads work, visit [HOW-PROTOTHREADS-WO
    * If you use object threads, you must override virtual function `Run()` in each object that you create and then call each thread function in the object, in turn.
    * On Windows and Linux, you'll want to throttle the calls to thread functions with a hard delay in order to be polite to others on the system. See `OS::DelayMS(1)` in the example.  Vary the delay time depending on how responsive you need your application to be.
    * On 'bare metal' (Arduino, PIC32, STM32, etc.), you'll want to run without throttling.
-2. You must allocate a stack for each thread.
-   * If you have iterators or need other variables local to the function, you must specialize `Proto::Stack` and allocate them there (see `TestThreadStack` in the `TestThreads` example).
-   * If you don't need local variables, then simply allocate a stack of type `Proto::Stack`. See `BeepingThread_Stack` in the example.
-3. You must pass at least one argument to each thread function that is a reference to the thread's stack that you created.  The name of the argument _must_ be `rStack`.
+2. You must pass the corresponding thread instance variable to the thread function and it must be called `rThread`.
+3. If you have variables that you'd like to retain from one invocation to the next, you must allocate a data structure for each thread and pass it to the thread function.  There is no restriction on its name.
 4. For new platforms, implement a new `os_<name>.cpp` file that conforms to the modest interface specified in `os.hpp`.
